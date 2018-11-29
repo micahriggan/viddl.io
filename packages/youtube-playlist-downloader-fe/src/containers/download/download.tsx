@@ -13,14 +13,15 @@ interface IVideo {
   _filename: string;
   format_id: string;
 }
+
 interface IState {
   videos: IVideo[];
 }
 
 export class DownloadContainer extends React.Component<IProps, IState> {
-
   public componentDidMount() {
-    window.console.log(this.props.match.params.url);
+    const url = decodeURIComponent(this.props.match.params.url);
+    window.console.log(url);
   }
 
   public render() {

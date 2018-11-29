@@ -21,7 +21,7 @@ export class SearchContainer extends React.Component<IProps, IState> {
 
   public navToDownload() {
     const url = this.state.url;
-    this.props.history.push(`/download/${url}`);
+    this.props.history.push(`/dl/${encodeURIComponent(url)}`);
   }
 
   public handleUrlUpdate(event: React.FormEvent<HTMLInputElement>) {

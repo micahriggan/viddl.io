@@ -17,7 +17,7 @@ class App extends React.Component {
           <Route exact={true} path="/" component={SearchContainer} />
           <Route
             exact={true}
-            path="/download/:url"
+            path="/dl/:url*"
             component={DownloadContainer}
           />
         </Switch>
