@@ -21,7 +21,7 @@ function fetchInfo(url, options = []) {
   });
 }
 
-async function* iterateInfo(url, startIndex = 0, batchSize = 3) {
+async function* iterateInfo(url, startIndex = 1, batchSize = 3) {
   let failureCount = 0;
   let lastBatch = [];
   do {
@@ -47,7 +47,7 @@ async function* iterateInfo(url, startIndex = 0, batchSize = 3) {
         batchSize--;
       }
     }
-  } while (startIndex == 0 || (lastBatch.length >= 0 && failureCount < 3));
+  } while (startIndex < batchSize || (lastBatch.length >= 0 && failureCount < 3));
 }
 
 app.use("/info/:url", async (req, res) => {

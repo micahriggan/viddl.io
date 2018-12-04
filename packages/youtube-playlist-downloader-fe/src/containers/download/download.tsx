@@ -6,10 +6,6 @@ import { RouteComponentProps } from "react-router";
 import * as request from "request-promise";
 import { Button, Card, Icon, Image, Select } from "semantic-ui-react";
 import * as IO from "socket.io-client";
-const io = IO("ws://localhost:8080", {
-  reconnection: true,
-  transports: ["websocket"]
-});
 
 type IProps = RouteComponentProps<{ url: string }>;
 
@@ -81,6 +77,11 @@ export class DownloadContainer extends React.Component<IProps, IState> {
       this.setState({ videos: videoInfo });
       window.console.log(this.state.videos);
     } catch (e) {
+      const io = IO("ws://localhost:8080", {
+        reconnection: true,
+        transports: ["websocket"]
+      });
+
       io.on("connect", () => {
         window.console.log("Connected to websocket");
         io.emit("info", url);
@@ -143,7 +144,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
         f => f.format === this.state.selectedFormat
       );
       if (videoFormat) {
-        const filename = video.fulltitle + '.' + videoFormat.ext;
+        const filename = video.fulltitle + "." + videoFormat.ext;
         window.console.log("Downloading", videoFormat.url, filename);
         JsFileDownload(videoFormat.url, filename);
       }
