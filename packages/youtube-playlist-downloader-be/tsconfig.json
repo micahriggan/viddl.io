@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["es5", "es6"],
+    "lib": ["esnext", "es2015", "esnext.asynciterable"],
     "noImplicitAny": false,
     "removeComments": true,
     "declaration": true,
@@ -9,7 +9,8 @@
     "experimentalDecorators": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "target": "es5",
+    "downlevelIteration": false,
+    "target": "es2016",
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
@@ -18,11 +19,6 @@
     "outDir": "ts_build",
     "sourceMap": true
   },
-  "include": [
-    "./src/**/*.ts",
-    "./tests/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["./src/**/*.ts", "./tests/**/*.ts"],
+  "exclude": ["node_modules"]
 }

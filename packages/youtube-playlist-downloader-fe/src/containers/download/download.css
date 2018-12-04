@@ -1,0 +1,67 @@
+.download-container {
+  display: flex;
+  padding: 25px;
+  text-align: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  margin: 0 auto;
+  width: 50%;
+}
+
+.download-container .download-icon {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  align-content: center;
+}
+
+.download-container .overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  transition: .3s ease;
+  background-color: red;
+}
+
+
+.download-container .container {
+  position: relative;
+  width: 100%;
+}
+
+.download-container .image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.download-container .container:hover .overlay {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.download-container .icon {
+  color: white;
+  font-size: 100px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+
+.download-container .settings-container {
+  padding: 15px;
+}
