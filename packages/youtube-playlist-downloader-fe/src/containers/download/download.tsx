@@ -1,5 +1,6 @@
 import * as React from "react";
 import { RouteComponentProps } from "react-router";
+import * as request from "request-promise";
 import { Card, Input } from "semantic-ui-react";
 
 type IProps = RouteComponentProps<{ url: string }>;
@@ -14,14 +15,39 @@ interface IVideo {
   format_id: string;
 }
 
+interface IYTPlaylistItem {
+  id: string;
+  name: string;
+  url: string;
+}
+
 interface IState {
   videos: IVideo[];
 }
 
 export class DownloadContainer extends React.Component<IProps, IState> {
-  public componentDidMount() {
+  public async getPlaylistItems(url: string) {
+    const encodedUrl = encodeURIComponent(url);
+    const resp = await request.get(
+      `http://localhost:8080/playlist/${encodedUrl}`,
+      { json: true }
+    );
+    return resp as Promise<IYTPlaylistItem[]>;
+  }
+
+  public async getVideoInfo(url: string) {
+    const encodedUrl = encodeURIComponent(url);
+    const resp = await request.get(
+      `http://localhost:8080/info/${encodedUrl}`,
+      { json: true }
+    );
+    return resp as Promise<IVideo[]>;
+  }
+
+  public async componentDidMount() {
     const url = decodeURIComponent(this.props.match.params.url);
-    window.console.log(url);
+    const videoInfo = await this.getVideoInfo(url);
+    window.console.log(videoInfo);
   }
 
   public render() {
