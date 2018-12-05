@@ -1,11 +1,11 @@
 import "./download.css";
 
-import JsFileDownload from "js-file-download";
 import * as React from "react";
 import { RouteComponentProps } from "react-router";
 import * as request from "request-promise";
 import { Button, Card, Icon, Image, Select } from "semantic-ui-react";
 import * as IO from "socket.io-client";
+const BackendURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
 type IProps = RouteComponentProps<{ url: string }>;
 
@@ -19,6 +19,7 @@ interface IVideo {
   _filename: string;
   format_id: string;
   formats: IFormat[];
+  webpage_url: string;
 }
 
 interface IFormat {
@@ -55,16 +56,15 @@ export class DownloadContainer extends React.Component<IProps, IState> {
 
   public async getPlaylistItems(url: string) {
     const encodedUrl = encodeURIComponent(url);
-    const resp = await request.get(
-      `http://localhost:8080/playlist/${encodedUrl}`,
-      { json: true }
-    );
+    const resp = await request.get(`${BackendURL}/playlist/${encodedUrl}`, {
+      json: true
+    });
     return resp as Promise<IYTPlaylistItem[]>;
   }
 
   public async getVideoInfo(url: string) {
     const encodedUrl = encodeURIComponent(url);
-    const resp = await request.get(`http://localhost:8080/info/${encodedUrl}`, {
+    const resp = await request.get(`${BackendURL}/info/${encodedUrl}`, {
       json: true
     });
     return resp as Promise<IVideo[]>;
@@ -77,7 +77,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
       this.setState({ videos: videoInfo });
       window.console.log(this.state.videos);
     } catch (e) {
-      const io = IO("ws://localhost:8080", {
+      const io = IO(BackendURL, {
         reconnection: true,
         transports: ["websocket"]
       });
@@ -144,9 +144,14 @@ export class DownloadContainer extends React.Component<IProps, IState> {
         f => f.format === this.state.selectedFormat
       );
       if (videoFormat) {
+        window.console.log("Video selected", video);
+        const id = videoFormat.format_id;
+        const videoUrl = encodeURIComponent(video.webpage_url);
+        const dlUrl = `${BackendURL}/download/${id}/${videoUrl}`;
+        window.console.log(dlUrl);
         const filename = video.fulltitle + "." + videoFormat.ext;
-        window.console.log("Downloading", videoFormat.url, filename);
-        JsFileDownload(videoFormat.url, filename);
+        window.console.log("Downloading", dlUrl, filename);
+        window.open(dlUrl, "_blank");
       }
     };
   }
