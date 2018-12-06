@@ -2,6 +2,7 @@ import "./search.css";
 
 import * as React from "react";
 import { RouteComponentProps } from "react-router";
+import { Link } from "react-router-dom";
 import { Button, Card, Icon, Input } from "semantic-ui-react";
 
 type IProps = RouteComponentProps<any>;
@@ -33,14 +34,16 @@ export class SearchContainer extends React.Component<IProps, IState> {
       <div className="search-container">
         <Card>
           <Card.Content>
-            <Card.Header>viddl.io</Card.Header>
+            <Card.Header>
+              <Link to="/">viddl.io</Link>
+            </Card.Header>
             <Card.Meta>download videos</Card.Meta>
             <Card.Description>
               <Input
                 onChange={this.handleUrlUpdate}
                 action={
-                  <Button>
-                    <Icon name="search" onClick={this.navToDownload} />
+                  <Button onClick={this.navToDownload}>
+                    <Icon name="search" />
                   </Button>
                 }
                 fluid={true}

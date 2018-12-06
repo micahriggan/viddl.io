@@ -1,5 +1,5 @@
 {
-  "name": "youtube-playlist-downloader-fe",
+  "name": "viddl-fe",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -8,12 +8,12 @@
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
     "react-router": "^4.3.1",
+    "react-router-dom": "^4.3.1",
     "react-scripts-ts": "3.1.0",
     "request-promise": "^4.2.2",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^0.83.0",
-    "socket.io-client": "^2.2.0",
-    "youtube-playlist": "^1.0.2"
+    "socket.io-client": "^2.2.0"
   },
   "scripts": {
     "start": "react-scripts-ts start",
@@ -28,6 +28,7 @@
     "@types/react": "^16.7.8",
     "@types/react-dom": "^16.0.11",
     "@types/react-router": "^4.4.1",
+    "@types/react-router-dom": "^4.3.1",
     "@types/request-promise": "^4.1.42",
     "@types/socket.io": "^2.1.0",
     "@types/socket.io-client": "^1.4.32",

@@ -1,10 +1,16 @@
 import "./download.css";
 
+import JsFileDownload from "js-file-download";
+
 import * as React from "react";
-import { RouteComponentProps } from "react-router";
-import * as request from "request-promise";
-import { Button, Card, Icon, Image, Select } from "semantic-ui-react";
+import * as request from "request";
+import * as requestPromise from "request-promise";
 import * as IO from "socket.io-client";
+
+import { RouteComponentProps } from "react-router";
+import { Link } from "react-router-dom";
+import { Button, Card, Dropdown, Icon, Image } from "semantic-ui-react";
+
 const BackendURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
 type IProps = RouteComponentProps<{ url: string }>;
@@ -56,15 +62,18 @@ export class DownloadContainer extends React.Component<IProps, IState> {
 
   public async getPlaylistItems(url: string) {
     const encodedUrl = encodeURIComponent(url);
-    const resp = await request.get(`${BackendURL}/playlist/${encodedUrl}`, {
-      json: true
-    });
+    const resp = await requestPromise.get(
+      `${BackendURL}/playlist/${encodedUrl}`,
+      {
+        json: true
+      }
+    );
     return resp as Promise<IYTPlaylistItem[]>;
   }
 
   public async getVideoInfo(url: string) {
     const encodedUrl = encodeURIComponent(url);
-    const resp = await request.get(`${BackendURL}/info/${encodedUrl}`, {
+    const resp = await requestPromise.get(`${BackendURL}/info/${encodedUrl}`, {
       json: true
     });
     return resp as Promise<IVideo[]>;
@@ -115,8 +124,11 @@ export class DownloadContainer extends React.Component<IProps, IState> {
 
     return (
       <div className="settings-container">
-        <Select
+        <Dropdown
+          icon="caret down"
           placeholder="Select a format"
+          search={true}
+          selection={true}
           options={options}
           onChange={this.handleFormatChange}
         />
@@ -139,7 +151,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
   }
 
   public handleFileDownload(video: IVideo) {
-    return () => {
+    return async () => {
       const videoFormat = video.formats.find(
         f => f.format === this.state.selectedFormat
       );
@@ -152,6 +164,8 @@ export class DownloadContainer extends React.Component<IProps, IState> {
         const filename = video.fulltitle + "." + videoFormat.ext;
         window.console.log("Downloading", dlUrl, filename);
         window.open(dlUrl, "_blank");
+        const fileStream = await request(dlUrl);
+        JsFileDownload(fileStream, filename);
       }
     };
   }
@@ -179,7 +193,9 @@ export class DownloadContainer extends React.Component<IProps, IState> {
       <div className="download-container">
         <Card style={{ width: "100%" }}>
           <Card.Content>
-            <Card.Header>viddl.io</Card.Header>
+            <Card.Header>
+              <Link to="/">viddl.io</Link>
+            </Card.Header>
             <Card.Meta>download videos</Card.Meta>
             <Card.Description>
               {this.state.videos.length > 0

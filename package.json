@@ -1,11 +1,11 @@
 {
-  "name": "youtube-playlist-downloader",
+  "name": "viddl",
   "version": "1.0.0",
   "description": "download youtube videos",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Micah Riggan",
+  "license": "MIT"
 }
