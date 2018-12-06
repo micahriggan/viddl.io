@@ -15,7 +15,7 @@ const queue = [];
 
 function fetchInfo(url, params = []) {
   const processArgs = {
-      maxBuffer: 1024 * 1024 * 10 // 10MB
+    maxBuffer: 1024 * 1024 * 10 // 10MB
   };
   return new Promise((resolve, reject) => {
     console.log(`Fetching video data for ${url}`);
@@ -79,7 +79,7 @@ app.use("/info/:url", async (req, res) => {
   }
 });
 
-function saveVideo(url, params, options, writeStream, notify='') {
+function saveVideo(url, params, options, writeStream, notify = "") {
   const video = youtubedl(url, params, options);
   video.on("info", info => {
     writeStream.setHeader(
@@ -88,15 +88,38 @@ function saveVideo(url, params, options, writeStream, notify='') {
     );
     console.log("Saving video", url);
     video.pipe(writeStream);
-    if(notify) {
-      io.to(notify).emit('download:start', url);
-    }
   });
-  video.on('end', function() {
-    if(notify) {
-      io.to(notify).emit('download:complete', url);
-    }
-  });
+
+  if (notify) {
+    video.on("error", function error(err) {
+      io.to(notify).emit("download:error", url);
+    });
+
+    let size = 0;
+    video.on("info", info => {
+      size = info.size;
+      io.to(notify).emit("download:start", url);
+    });
+
+    let pos = 0;
+    video.on("data", chunk => {
+      pos += chunk.length;
+      let lastPercent = 0;
+      if (size) {
+        const percent = Math.floor(((pos / size) * 100));
+        if(percent != lastPercent) {
+          io.to(notify).emit("download:percent", url, percent);
+        }
+        lastPercent = percent;
+      }
+    });
+
+    video.on("end", () => {
+      if (notify) {
+        io.to(notify).emit("download:complete", url);
+      }
+    });
+  }
   return video;
 }
 

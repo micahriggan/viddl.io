@@ -97,26 +97,30 @@ export class DownloadContainer extends React.Component<IProps, IState> {
     });
     this.io.on("connect", () => {
       window.console.log("Connected to websocket");
-      const downloadsInterval = {};
+
       this.io.on("download:start", (videoUrl: string, size: number) => {
         window.console.log("download started", videoUrl);
-        downloadsInterval[videoUrl] = setInterval(() => {
-          const currentPercent = this.state.downloading[videoUrl] || 0;
-          const newPercent =
-            currentPercent < 90 ? currentPercent + 1 : currentPercent;
-          this.setState({
-            downloading: {
-              [videoUrl]: newPercent
-            }
-          });
-        }, 1000);
+        this.setState({
+          downloading: {
+            [videoUrl]: 1
+          }
+        });
       });
+
       this.io.on("download:complete", (videoUrl: string) => {
-        clearInterval(downloadsInterval[videoUrl]);
         window.console.log("download finished", videoUrl);
         this.setState({
           downloading: {
             [videoUrl]: 100
+          }
+        });
+      });
+
+      this.io.on("download:percent", (videoUrl: string, percent: number) => {
+        window.console.log("download progress", videoUrl, percent);
+        this.setState({
+          downloading: {
+            [videoUrl]: Math.floor(percent)
           }
         });
       });
@@ -192,9 +196,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
         window.console.log("Video selected", video);
         const id = videoFormat.format_id;
         const videoUrl = encodeURIComponent(video.webpage_url);
-        const dlUrl = `${BackendURL}/download/${id}/${videoUrl}/${
-          this.io.id
-        }`;
+        const dlUrl = `${BackendURL}/download/${id}/${videoUrl}/${this.io.id}`;
         window.console.log(dlUrl);
         const filename = video.fulltitle + "." + videoFormat.ext;
         window.console.log("Downloading", dlUrl, filename);
@@ -215,6 +217,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
                 percent={currentPercent}
                 size="large"
                 indicating={true}
+                progress={true}
               />
             ) : null}
           </div>
