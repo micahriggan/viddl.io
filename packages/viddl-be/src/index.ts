@@ -79,7 +79,7 @@ app.use("/info/:url", async (req, res) => {
   }
 });
 
-function saveVideo(url, params, options, writeStream) {
+function saveVideo(url, params, options, writeStream, notify='') {
   const video = youtubedl(url, params, options);
   video.on("info", info => {
     writeStream.setHeader(
@@ -88,17 +88,25 @@ function saveVideo(url, params, options, writeStream) {
     );
     console.log("Saving video", url);
     video.pipe(writeStream);
+    if(notify) {
+      io.to(notify).emit('download:start', url);
+    }
+  });
+  video.on('end', function() {
+    if(notify) {
+      io.to(notify).emit('download:complete', url);
+    }
   });
   return video;
 }
 
-app.use("/download/:format/:url", async (req, res) => {
+app.use("/download/:format/:url/:notify", async (req, res) => {
   const url = decodeURIComponent(req.params.url);
   const format = `--format=${req.params.format || 136}`;
   console.log(url, format);
   const params = [format];
   const options = {};
-  saveVideo(url, params, options, res);
+  saveVideo(url, params, options, res, req.params.notify);
 });
 
 app.use("/valid/:url", async (req, res) => {

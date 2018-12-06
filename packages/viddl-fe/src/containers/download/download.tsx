@@ -1,15 +1,20 @@
 import "./download.css";
 
-import JsFileDownload from "js-file-download";
-
 import * as React from "react";
-import * as request from "request";
 import * as requestPromise from "request-promise";
 import * as IO from "socket.io-client";
 
 import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
-import { Button, Card, Dropdown, Icon, Image } from "semantic-ui-react";
+import {
+  Button,
+  Card,
+  Dropdown,
+  Header,
+  Icon,
+  Image,
+  Progress
+} from "semantic-ui-react";
 
 const BackendURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
@@ -44,13 +49,17 @@ interface IYTPlaylistItem {
 interface IState {
   videos: IVideo[];
   selectedFormat: string;
+  downloading: { [url: string]: number };
 }
 
 export class DownloadContainer extends React.Component<IProps, IState> {
   public state: IState = {
+    downloading: { "https://www.youtube.com/watch?v=mrRfpiAwad0": 1 },
     selectedFormat: "",
     videos: []
   };
+
+  public io: typeof IO.Socket;
 
   constructor(props: IProps) {
     super(props);
@@ -81,22 +90,46 @@ export class DownloadContainer extends React.Component<IProps, IState> {
 
   public async componentDidMount() {
     const url = decodeURIComponent(this.props.match.params.url);
+
+    this.io = IO(BackendURL, {
+      reconnection: true,
+      transports: ["websocket"]
+    });
+    this.io.on("connect", () => {
+      window.console.log("Connected to websocket");
+      const downloadsInterval = {};
+      this.io.on("download:start", (videoUrl: string, size: number) => {
+        window.console.log("download started", videoUrl);
+        downloadsInterval[videoUrl] = setInterval(() => {
+          const currentPercent = this.state.downloading[videoUrl] || 0;
+          const newPercent =
+            currentPercent < 90 ? currentPercent + 1 : currentPercent;
+          this.setState({
+            downloading: {
+              [videoUrl]: newPercent
+            }
+          });
+        }, 1000);
+      });
+      this.io.on("download:complete", (videoUrl: string) => {
+        clearInterval(downloadsInterval[videoUrl]);
+        window.console.log("download finished", videoUrl);
+        this.setState({
+          downloading: {
+            [videoUrl]: 100
+          }
+        });
+      });
+    });
+
     try {
       const videoInfo = await this.getVideoInfo(url);
       this.setState({ videos: videoInfo });
       window.console.log(this.state.videos);
     } catch (e) {
-      const io = IO(BackendURL, {
-        reconnection: true,
-        transports: ["websocket"]
-      });
-
-      io.on("connect", () => {
-        window.console.log("Connected to websocket");
-        io.emit("info", url);
-        io.on(url, (info: IVideo) => {
-          this.setState({ videos: this.state.videos.concat([info]) });
-        });
+      this.io.emit("info", url);
+      this.io.on(url, (info: IVideo) => {
+        this.setState({ videos: this.state.videos.concat([info]) });
       });
     }
   }
@@ -159,22 +192,33 @@ export class DownloadContainer extends React.Component<IProps, IState> {
         window.console.log("Video selected", video);
         const id = videoFormat.format_id;
         const videoUrl = encodeURIComponent(video.webpage_url);
-        const dlUrl = `${BackendURL}/download/${id}/${videoUrl}`;
+        const dlUrl = `${BackendURL}/download/${id}/${videoUrl}/${
+          this.io.id
+        }`;
         window.console.log(dlUrl);
         const filename = video.fulltitle + "." + videoFormat.ext;
         window.console.log("Downloading", dlUrl, filename);
         window.open(dlUrl, "_blank");
-        const fileStream = await request(dlUrl);
-        JsFileDownload(fileStream, filename);
       }
     };
   }
 
   public videoRow(video: IVideo) {
+    const currentPercent = this.state.downloading[video.webpage_url];
     return (
       <div key={video._filename}>
         <div className="container">
           <Image src={video.thumbnail} />
+          <div className="progress">
+            {currentPercent ? (
+              <Progress
+                percent={currentPercent}
+                size="large"
+                indicating={true}
+              />
+            ) : null}
+          </div>
+
           <div className="overlay">
             <Icon
               name="download"
@@ -182,8 +226,8 @@ export class DownloadContainer extends React.Component<IProps, IState> {
               onClick={this.handleFileDownload(video)}
             />
           </div>
+          <Header as="h3">{video.fulltitle}</Header>
         </div>
-        {video.fulltitle}
       </div>
     );
   }
