@@ -141,7 +141,7 @@ app.use("/valid/:url", async (req, res) => {
   res.json({ valid });
 });
 
-const port = 8080;
+const port = process.env.VIDDL_BACKEND_PORT || 8080;
 const server = HTTP.createServer(app);
 const io = IO(server);
 

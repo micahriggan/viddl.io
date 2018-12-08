@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "./node_modules/.bin/lerna run start --parallel",
+    "backend:prod": "VIDDL_BACKEND_PORT=80 ./node_modules/.bin/pm2 start ./packages/viddl-be/ts_build/index.js", 
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "compile": "./node_modules/.bin/lerna run compile",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,6 +13,7 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "devDependencies": {
-    "lerna": "^3.5.1"
+    "lerna": "^3.5.1",
+    "pm2": "^3.2.2"
   }
 }
