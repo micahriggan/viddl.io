@@ -13,7 +13,7 @@ module.exports = {
     },
     env_production: {
       NODE_ENV: 'production',
-      VIDDL_BACKEND_PORT: '80'
+      VIDDL_BACKEND_PORT: '8080'
     }
   }],
 };
