@@ -17,6 +17,7 @@
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
+    "build:prod": "REACT_APP_BACKEND_URL=http://ec2-52-38-166-75.us-west-2.compute.amazonaws.com react-scripts-ts build",
     "test": "react-scripts-ts test --env=jsdom",
     "eject": "react-scripts-ts eject"
   },
