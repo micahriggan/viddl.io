@@ -20,6 +20,17 @@
   align-content: center;
 }
 
+.download-container .icon-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 1;
+}
+
 .download-container .overlay {
   position: absolute;
   top: 0;
@@ -50,7 +61,7 @@
   cursor: pointer;
 }
 
-.download-container .icon {
+.download-container .icon-container > .icon {
   color: white;
   font-size: 100px;
   position: absolute;
@@ -62,6 +73,6 @@
 }
 
 
-.download-container .settings-container {
-  padding: 15px;
+.download-container .settings-container > * {
+  margin: 5px;
 }

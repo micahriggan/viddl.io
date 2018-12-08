@@ -10,7 +10,7 @@ import "./polyfill";
 const app = express();
 app.use(cors());
 
-const cache: { [url: string]: Array<any> } = {};
+const cache: { [url: string]: { videos: Array<any>; done: boolean } } = {};
 const queue = [];
 
 function fetchInfo(url, params = []) {
@@ -72,8 +72,8 @@ async function* iterateInfo(url: string, startIndex = 1, batchSize = 3) {
 
 app.use("/info/:url", async (req, res) => {
   const url = decodeURIComponent(req.params.url);
-  if (cache[url]) {
-    res.json(cache[url]);
+  if (cache[url] && cache[url].done) {
+    res.json(cache[url].videos);
   } else {
     res.status(307).json({ status: `use websockets to fetch data for ${url}` });
   }
@@ -84,7 +84,7 @@ function saveVideo(url, params, options, writeStream, notify = "") {
   video.on("info", info => {
     writeStream.setHeader(
       "Content-disposition",
-      "attachment; filename=" + info.title + `.${info.ext}`
+      "attachment; filename=\"" + info.title + `\".${info.ext}`
     );
     console.log("Saving video", url);
     video.pipe(writeStream);
@@ -102,13 +102,16 @@ function saveVideo(url, params, options, writeStream, notify = "") {
     });
 
     let pos = 0;
+    let lastTime = new Date().getTime();
+    let lastPercent = 0;
     video.on("data", chunk => {
       pos += chunk.length;
-      let lastPercent = 0;
       if (size) {
-        const percent = Math.floor(((pos / size) * 100));
-        if(percent != lastPercent) {
+        const percent = Math.floor((pos / size) * 100);
+        const newTime = new Date().getTime();
+        if (percent != lastPercent && newTime - lastTime > 1000) {
           io.to(notify).emit("download:percent", url, percent);
+          lastTime = newTime;
         }
         lastPercent = percent;
       }
@@ -146,17 +149,19 @@ io.on("connection", socket => {
   console.log("connection");
   socket.on("info", async url => {
     console.log("wsclient requested", url);
+    socket.join(url);
     if (cache[url]) {
-      if (cache[url].length) {
-        cache[url].forEach(video => socket.emit(url, video));
+      if (cache[url].videos.length) {
+        cache[url].videos.forEach(video => socket.emit(url, video));
       }
     } else {
-      cache[url] = [];
+      cache[url] = { videos: [], done: false };
       for await (let video of iterateInfo(url)) {
         console.log(`video info fetched for ${url}`);
-        cache[url].push(video);
-        socket.emit(url, video);
+        cache[url].videos.push(video);
+        io.sockets.in(url).emit(url, video);
       }
+      cache[url].done = true;
     }
   });
 });
