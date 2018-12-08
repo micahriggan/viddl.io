@@ -8,7 +8,7 @@
   align-items: center;
   align-content: center;
   margin: 0 auto;
-  width: 50%;
+  max-width: 700px;
 }
 
 .download-container .download-icon {
@@ -48,6 +48,7 @@
 .download-container .container {
   position: relative;
   width: 100%;
+  margin-bottom:20px;
 }
 
 .download-container .image {
@@ -72,7 +73,9 @@
   text-align: center;
 }
 
-
+.download-container .settings-container {
+  margin-bottom: 20px;
+}
 .download-container .settings-container > * {
   margin: 5px;
 }
