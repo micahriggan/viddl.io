@@ -9,12 +9,16 @@ import { Link } from "react-router-dom";
 import {
   Button,
   Card,
+  Dimmer,
   Dropdown,
   Header,
   Icon,
   Image,
   Label,
-  Progress
+  Loader,
+  Placeholder,
+  Progress,
+  Segment
 } from "semantic-ui-react";
 
 const BackendURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
@@ -50,6 +54,7 @@ interface IYTPlaylistItem {
 }
 
 interface IState {
+  fetching: boolean;
   videos: IVideo[];
   selectedFormat: string;
   downloading: { [url: string]: number };
@@ -60,6 +65,7 @@ interface IState {
 export class DownloadContainer extends React.Component<IProps, IState> {
   public state: IState = {
     downloading: {},
+    fetching: true,
     paused: false,
     queue: [],
     selectedFormat: "",
@@ -151,11 +157,13 @@ export class DownloadContainer extends React.Component<IProps, IState> {
   public async fetchVideoInformation(url: string) {
     try {
       const videoInfo = await this.getVideoInfo(url);
-      this.setState({ videos: videoInfo });
+      await this.setState({ videos: videoInfo });
+      window.console.log("VideoInfo fetched", videoInfo);
+      this.setState({ fetching: false });
     } catch (e) {
       this.io.emit("info", url);
-      this.io.on(url, (info: IVideo) => {
-        this.setState({ videos: this.state.videos.concat([info]) });
+      this.io.on(url, async (info: IVideo) => {
+        await this.setState({ videos: this.state.videos.concat([info]) });
       });
     }
   }
@@ -197,6 +205,16 @@ export class DownloadContainer extends React.Component<IProps, IState> {
         window.console.error("Error downloading", videoUrl);
         this.updateFileDownloadProgress(videoUrl, 0);
       });
+
+      this.io.on("fetching:started", (videoUrl: string) => {
+        window.console.log("starting fetching");
+        this.setState({ fetching: true });
+      });
+
+      this.io.on("fetching:done", (videoUrl: string) => {
+        window.console.log("done fetching");
+        this.setState({ fetching: false });
+      });
     });
   }
 
@@ -218,11 +236,20 @@ export class DownloadContainer extends React.Component<IProps, IState> {
   }
 
   public downloadManySettings() {
-    const options = this.state.videos[0].formats.map(f => ({
-      key: f.format_id,
-      text: `${f.ext} - ${f.format}`,
-      value: f.format
-    }));
+    interface IOption {
+      key: string;
+      text: string;
+      value: string;
+    }
+    let formats = [] as IOption[];
+    if (this.state.videos[0] && this.state.videos[0].formats) {
+      const options = this.state.videos[0].formats.map(f => ({
+        key: f.format_id,
+        text: `${f.ext} - ${f.format}`,
+        value: f.format
+      })) as IOption[];
+      formats = options;
+    }
 
     const downloadProgress = Math.floor(
       ((this.state.videos.length - this.state.queue.length) /
@@ -238,7 +265,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
           placeholder="Select a format"
           search={true}
           selection={true}
-          options={options}
+          options={formats}
           onChange={this.handleFormatChange}
         />
         <Button as="div" labelPosition="right" onClick={this.handleDownloadAll}>
@@ -337,19 +364,37 @@ export class DownloadContainer extends React.Component<IProps, IState> {
     );
   }
 
+  public loadingComponent() {
+    if (!this.state.videos.length && !this.state.fetching) {
+      return <Header as="h3">No Videos Available </Header>;
+    } else if (this.state.fetching) {
+      return (
+        <Segment>
+          <Dimmer active={true}>
+            <Loader>Loading</Loader>
+          </Dimmer>
+          <Placeholder fluid={true}>
+            <Placeholder.Image />
+          </Placeholder>
+        </Segment>
+      );
+    } else {
+      return null;
+    }
+  }
+
   public render() {
     return (
       <div className="download-container">
-        <Card style={{ width: "100%" }}>
+        <Card style={{ minHeight: "500px", width: "100%" }}>
           <Card.Content>
             <Card.Header>
               <Link to="/">viddl.io</Link>
             </Card.Header>
             <Card.Meta>download videos</Card.Meta>
             <Card.Description>
-              {this.state.videos.length > 0
-                ? this.downloadManySettings()
-                : null}
+              {this.downloadManySettings()}
+              {this.loadingComponent()}
               {this.state.videos.map(this.videoRow)}
             </Card.Description>
           </Card.Content>

@@ -31,39 +31,46 @@ function fetchInfo(url, params = []) {
 }
 
 async function* iterateInfo(url: string, startIndex = 1, batchSize = 3) {
+  let fetched = 0;
   let failureCount = 0;
   let lastBatch = [];
-  if (url.includes("playlist")) {
-    do {
-      try {
-        const batch = `${startIndex}-${startIndex + batchSize}`;
-        const playlistParams = [`--playlist-items=${batch}`];
-        console.log("Fetching ", url, "video", batch);
-        lastBatch = (await fetchInfo(url, playlistParams)) as Array<any>;
-        // inclusive if successful
-        startIndex += batchSize + 1;
-        failureCount = 0;
+  do {
+    try {
+      const batch = `${startIndex}-${startIndex + batchSize}`;
+      const playlistParams = [`--playlist-items=${batch}`];
+      console.log("Fetching ", url, "video", batch);
+      lastBatch = (await fetchInfo(url, playlistParams)) as Array<any>;
+      // inclusive if successful
+      startIndex += batchSize + 1;
+      failureCount = 0;
 
-        for (let item of lastBatch) {
-          yield item;
-        }
-      } catch (e) {
-        if (batchSize <= 0) {
-          startIndex++;
-          batchSize = 3;
-          failureCount++;
-        } else {
-          batchSize--;
-        }
+      for (let item of lastBatch) {
+        fetched++;
+        yield item;
       }
-    } while (
-      startIndex < batchSize ||
-      (lastBatch.length >= 0 && failureCount < 3)
-    );
-  } else {
+    } catch (e) {
+      if (batchSize <= 0) {
+        startIndex++;
+        batchSize = 3;
+        failureCount++;
+      } else {
+        batchSize--;
+      }
+    }
+  } while (
+    startIndex < batchSize ||
+    (lastBatch.length >= 0 && failureCount < 3)
+  );
+  if (fetched === 0) {
     try {
       const videoInfo = await fetchInfo(url, []);
-      yield videoInfo;
+      if (videoInfo instanceof Array) {
+        for (let item of videoInfo) {
+          yield item;
+        }
+      } else {
+        yield videoInfo;
+      }
     } catch (e) {
       console.log(e);
     }
@@ -84,7 +91,7 @@ function saveVideo(url, params, options, writeStream, notify = "") {
   video.on("info", info => {
     writeStream.setHeader(
       "Content-disposition",
-      "attachment; filename=\"" + info.title + `\".${info.ext}`
+      'attachment; filename="' + info.title + `\".${info.ext}`
     );
     console.log("Saving video", url);
     video.pipe(writeStream);
@@ -156,11 +163,17 @@ io.on("connection", socket => {
       }
     } else {
       cache[url] = { videos: [], done: false };
-      for await (let video of iterateInfo(url)) {
-        console.log(`video info fetched for ${url}`);
-        cache[url].videos.push(video);
-        io.sockets.in(url).emit(url, video);
+      io.sockets.in(url).emit("fetching:started", true);
+      try {
+        for await (let video of iterateInfo(url)) {
+          console.log(`video info fetched for ${url}`);
+          cache[url].videos.push(video);
+          io.sockets.in(url).emit(url, video);
+        }
+      } catch (e) {
+        console.error(url, `cannot be scraped`);
       }
+      io.sockets.in(url).emit("fetching:done", true);
       cache[url].done = true;
     }
   });
