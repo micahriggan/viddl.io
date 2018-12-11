@@ -54,6 +54,7 @@ interface IYTPlaylistItem {
 }
 
 interface IState {
+  target: string;
   fetching: boolean;
   videos: IVideo[];
   selectedFormat: string;
@@ -69,6 +70,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
     paused: false,
     queue: [],
     selectedFormat: "",
+    target: "",
     videos: []
   };
 
@@ -107,6 +109,7 @@ export class DownloadContainer extends React.Component<IProps, IState> {
 
   public async componentDidMount() {
     const url = decodeURIComponent(this.props.match.params.url);
+    this.setState({ target: url });
 
     this.io = IO(BackendURL, {
       reconnection: true,
@@ -391,7 +394,12 @@ export class DownloadContainer extends React.Component<IProps, IState> {
             <Card.Header>
               <Link to="/">viddl.io</Link>
             </Card.Header>
-            <Card.Meta>download videos</Card.Meta>
+            <Card.Meta>
+              download videos
+              <div style={{marginTop: '15px'}}>
+                <a href={this.state.target}>{this.state.target}</a>
+              </div>
+            </Card.Meta>
             <Card.Description>
               {this.downloadManySettings()}
               {this.loadingComponent()}
